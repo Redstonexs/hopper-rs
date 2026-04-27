@@ -3,6 +3,7 @@ use config::{ConfigError, Environment, File, FileFormat};
 use serde::Deserialize;
 use std::net::SocketAddr;
 use thiserror::Error;
+use std::{fs, path::Path};
 
 pub(super) mod metrics;
 pub(super) mod router;
@@ -29,6 +30,18 @@ impl ServerConfig {
     /// reads configuration from Config.toml
     /// (more file exts can be supported through config's features)
     pub fn read() -> Result<Self, ServerConfigError> {
+        let path = Path::new("Config.toml");
+        if !path.exists() {
+            // Write default config
+            let default_config = r#"
+listen = "0.0.0.0:25565"
+
+[routing]
+default = { ip = "127.0.0.1:25565" }
+"#;
+            fs::write(path, default_config).expect("Failed to write default Config.toml");
+        }
+
         config::Config::builder()
             .add_source(
                 Environment::default()
